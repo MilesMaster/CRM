@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Lumière Kunden</title>
+  <meta name="theme-color" content="#faf8f5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Kunden">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="kopf">
+    <h1 class="marke">Lumière <span>Kunden</span></h1>
+    <div class="kopf-knoepfe">
+      <button type="button" class="knopf leise" id="knopf-sicherung">Sicherung</button>
+      <button type="button" class="knopf haupt" id="knopf-neuer-kunde">+ Neuer Kunde</button>
+    </div>
+  </header>
+
+  <div id="hinweise" class="hinweise"></div>
+
+  <main class="arbeitsflaeche">
+    <section class="liste" aria-label="Kundenliste">
+      <div class="suche">
+        <input type="search" id="suche" placeholder="Suchen: Name, Telefon, Mail" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Kunden suchen">
+      </div>
+      <p class="liste-zahl" id="liste-zahl"></p>
+      <ul id="kundenliste" class="kundenliste"></ul>
+    </section>
+    <section class="detail" id="detail" aria-live="polite"></section>
+  </main>
+
+  <!-- Kunde erfassen oder bearbeiten -->
+  <dialog id="kunde-dialog" class="dialog">
+    <form id="kunde-form" novalidate>
+      <h2 id="kunde-dialog-titel">Neuer Kunde</h2>
+      <div class="felder zwei">
+        <label>Vorname<input name="vorname" autocomplete="off" autocapitalize="words"></label>
+        <label>Nachname<input name="nachname" autocomplete="off" autocapitalize="words"></label>
+        <label>Telefon<input name="telefon" type="tel" autocomplete="off" inputmode="tel"></label>
+        <label>Mail<input name="mail" type="email" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      </div>
+      <label>Notizen<textarea name="notizen" rows="6" placeholder="z. B. Farbrezept, Vorlieben, Allergien"></textarea></label>
+      <p class="fehler" role="alert"></p>
+      <div class="dialog-knoepfe">
+        <button type="button" class="knopf gefahr" id="kunde-loeschen" hidden>Kunde löschen</button>
+        <span class="abstand"></span>
+        <button type="button" class="knopf leise" data-schliessen>Abbrechen</button>
+        <button type="submit" class="knopf haupt">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Termin erfassen oder bearbeiten -->
+  <dialog id="termin-dialog" class="dialog">
+    <form id="termin-form" novalidate>
+      <h2 id="termin-dialog-titel">Neuer Termin</h2>
+      <p class="untertitel" id="termin-dialog-kunde"></p>
+      <div class="felder drei">
+        <label>Datum<input name="datum" type="date" required></label>
+        <label>Uhrzeit<input name="zeit" type="time" step="300" required></label>
+        <label>Dauer
+          <select name="dauerMinuten">
+            <option value="15">15 Min.</option>
+            <option value="30">30 Min.</option>
+            <option value="45">45 Min.</option>
+            <option value="60" selected>1 Std.</option>
+            <option value="75">1 Std. 15 Min.</option>
+            <option value="90">1 Std. 30 Min.</option>
+            <option value="120">2 Std.</option>
+            <option value="150">2 Std. 30 Min.</option>
+            <option value="180">3 Std.</option>
+            <option value="240">4 Std.</option>
+          </select>
+        </label>
+      </div>
+      <label>Leistung<input name="leistung" list="leistungen" autocomplete="off" placeholder="z. B. Schnitt, Farbe, Strähnen"></label>
+      <datalist id="leistungen"></datalist>
+      <label>Notiz<textarea name="notiz" rows="3"></textarea></label>
+      <p class="fehler" role="alert"></p>
+      <div class="dialog-knoepfe">
+        <button type="button" class="knopf gefahr" id="termin-loeschen" hidden>Termin löschen</button>
+        <span class="abstand"></span>
+        <button type="button" class="knopf leise" data-schliessen>Abbrechen</button>
+        <button type="submit" class="knopf haupt">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Termin in den Kalender übernehmen -->
+  <dialog id="kalender-dialog" class="dialog schmal">
+    <h2 id="kalender-titel">Termin gespeichert</h2>
+    <p id="kalender-zusammenfassung" class="zusammenfassung"></p>
+    <p id="kalender-aenderung" class="warnung" hidden>
+      Der Termin wurde geändert. Bitte den alten Eintrag im Kalender selbst löschen:
+      ein Link kann bestehende Einträge nicht ändern.
+    </p>
+    <div class="kalender-knoepfe">
+      <a class="knopf haupt gross" id="kalender-google" target="_blank" rel="noopener noreferrer">In Google Kalender eintragen</a>
+      <button type="button" class="knopf leise gross" id="kalender-ics">In iPad-Kalender (Datei)</button>
+    </div>
+    <p class="klein">Im Google Kalender anschliessend «Speichern» tippen.</p>
+    <div class="dialog-knoepfe">
+      <span class="abstand"></span>
+      <button type="button" class="knopf leise" data-schliessen>Fertig</button>
+    </div>
+  </dialog>
+
+  <!-- Rückfrage -->
+  <dialog id="frage-dialog" class="dialog schmal">
+    <h2 id="frage-titel"></h2>
+    <p id="frage-text"></p>
+    <div class="dialog-knoepfe">
+      <span class="abstand"></span>
+      <button type="button" class="knopf leise" id="frage-nein">Abbrechen</button>
+      <button type="button" class="knopf gefahr-voll" id="frage-ja">Ja</button>
+    </div>
+  </dialog>
+
+  <!-- Sicherung -->
+  <dialog id="sicherung-dialog" class="dialog">
+    <h2>Sicherung</h2>
+    <p id="sicherung-stand"></p>
+    <div class="sicherung-teil">
+      <h3>Exportieren</h3>
+      <p class="klein">Die JSON-Datei ist die vollständige Sicherung und kann wieder eingelesen werden.
+        Am besten monatlich in «Dateien» (iCloud Drive) sichern.</p>
+      <div class="reihe">
+        <button type="button" class="knopf haupt" id="export-json">Sicherung exportieren (JSON)</button>
+        <button type="button" class="knopf leise" id="export-csv">Tabelle für Excel (CSV)</button>
+      </div>
+    </div>
+    <div class="sicherung-teil">
+      <h3>Einlesen</h3>
+      <p class="klein">Liest eine JSON-Sicherung dieser App ein und <strong>ersetzt alle Daten</strong> auf diesem iPad.</p>
+      <label class="knopf leise datei-knopf">Sicherung auswählen …
+        <input type="file" id="import-datei" accept=".json,application/json">
+      </label>
+    </div>
+    <p class="klein" id="speicher-status"></p>
+    <div class="dialog-knoepfe">
+      <span class="abstand"></span>
+      <button type="button" class="knopf leise" data-schliessen>Schliessen</button>
+    </div>
+  </dialog>
+
+  <div id="meldung" class="meldung" role="status" hidden></div>
+</body>
+</html>

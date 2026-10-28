@@ -1,0 +1,6 @@
+.DS_Store
+node_modules/
+# Exporte nie ins Repo (koennen Kundendaten enthalten)
+*.csv
+kundenkartei-*.json
+*.ics
