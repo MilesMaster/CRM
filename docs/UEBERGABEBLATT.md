@@ -13,7 +13,7 @@ eine Sicherung exportieren oder einen Termin an Google übergeben.
 4. Ab jetzt immer über das Symbol **Kunden** auf dem Home-Bildschirm starten,
    nicht über Safari. Nur so bleiben die Daten dauerhaft gespeichert.
 
-Adresse: ______________________________________
+Adresse: **https://milesmaster.github.io/CRM/**
 
 ## 2. Gerätecode (Pflicht)
 
