@@ -1,7 +1,7 @@
 // Oberfläche: verbindet Speicher, Logik und Seite.
 
 import * as M from './modell.js';
-import { googleLink, ics, icsDateiname } from './kalender.js';
+import * as K from './kalender.js';
 import { exportJson, importJson, kundenCsv, termineCsv, dateiname } from './sicherung.js';
 import { oeffne } from './speicher.js';
 import { formatDatum, formatDatumKurz, formatZeit, formatDauer, isoTeile, heute } from './zeit.js';
@@ -13,6 +13,10 @@ const zustand = {
   suche: '',
   letzterExport: null,
   persistent: null,
+  ansicht: 'kunden', // oder 'kalender'
+  kalenderModus: 'woche', // oder 'monat'
+  kalenderTag: heute(),
+  terminTagNachKunde: null, // neuer Kunde aus der Kalenderauswahl: danach gleich Termin
 };
 let speicher;
 
@@ -199,11 +203,6 @@ function terminZeile(t, kunde, vergangen) {
       h('span', { class: 'termin-leistung' }, t.leistung || 'Ohne Leistung'),
       t.notiz ? h('span', { class: 'termin-notiz' }, t.notiz) : null,
     ),
-    vergangen ? null : h('button', {
-      type: 'button',
-      class: 'knopf leise',
-      onclick: () => oeffneKalender(t, kunde, false),
-    }, 'Kalender'),
     h('button', {
       type: 'button',
       class: 'knopf leise',
@@ -267,8 +266,10 @@ function renderDetail() {
 
 let kundeInArbeit = null;
 
-function oeffneKundeDialog(kunde) {
+// terminTag: neuer Kunde aus der Kalenderauswahl, danach gleich den Termin erfassen
+function oeffneKundeDialog(kunde, terminTag = null) {
   kundeInArbeit = kunde;
+  zustand.terminTagNachKunde = terminTag;
   const form = $('#kunde-form');
   form.reset();
   $('#kunde-dialog-titel').textContent = kunde ? 'Kunde bearbeiten' : 'Neuer Kunde';
@@ -302,9 +303,16 @@ async function speichereKunde(ereignis) {
     zustand.suche = '';
     $('#suche').value = '';
   }
+  const terminTag = kundeInArbeit ? null : zustand.terminTagNachKunde;
+  zustand.terminTagNachKunde = null;
   waehle(kunde.id);
   renderHinweise();
-  meldung('Kunde gespeichert.');
+  if (terminTag) {
+    renderKalender();
+    oeffneTerminDialog(kunde, null, terminTag);
+  } else {
+    meldung('Kunde gespeichert.');
+  }
 }
 
 async function loescheKunde() {
@@ -320,6 +328,7 @@ async function loescheKunde() {
   zustand.termine = zustand.termine.filter((t) => t.kundeId !== k.id);
   $('#kunde-dialog').close();
   waehle(null);
+  renderKalender();
   renderHinweise();
   meldung('Kunde gelöscht.');
 }
@@ -334,7 +343,7 @@ function naechsteHalbeStunde() {
   return isoTeile(new Date(Math.ceil(Date.now() / schritt) * schritt).toISOString()).zeit;
 }
 
-function oeffneTerminDialog(kunde, termin) {
+function oeffneTerminDialog(kunde, termin, vorgabeTag = null) {
   terminKunde = kunde;
   terminInArbeit = termin;
   const form = $('#termin-form');
@@ -343,6 +352,7 @@ function oeffneTerminDialog(kunde, termin) {
   $('#termin-dialog-titel').textContent = termin ? 'Termin bearbeiten' : 'Neuer Termin';
   $('#termin-dialog-kunde').textContent = M.vollerName(kunde);
   $('#termin-loeschen').hidden = !termin;
+  $('#termin-zur-karte').hidden = !termin || zustand.ansicht === 'kunden';
   $('#leistungen').replaceChildren(...M.bekannteLeistungen(zustand.termine).map((l) => h('option', { value: l })));
 
   const dauer = form.elements.dauerMinuten;
@@ -358,8 +368,9 @@ function oeffneTerminDialog(kunde, termin) {
     form.elements.leistung.value = termin.leistung;
     form.elements.notiz.value = termin.notiz;
   } else {
-    form.elements.datum.value = heute();
-    form.elements.zeit.value = naechsteHalbeStunde();
+    const tag = vorgabeTag ?? heute();
+    form.elements.datum.value = tag;
+    form.elements.zeit.value = tag === heute() ? naechsteHalbeStunde() : '09:00';
     dauer.value = '60';
   }
   $('#termin-dialog').showModal();
@@ -388,7 +399,8 @@ async function speichereTermin(ereignis) {
   $('#termin-dialog').close();
   renderListe();
   renderDetail();
-  oeffneKalender(termin, terminKunde, geaendert, geaendert ? 'Termin geändert' : 'Termin gespeichert');
+  renderKalender();
+  meldung(geaendert ? 'Termin geändert.' : 'Termin gespeichert.');
 }
 
 async function loescheTermin() {
@@ -396,7 +408,7 @@ async function loescheTermin() {
   if (!t) return;
   const ok = await frage(
     'Termin löschen?',
-    `${formatDatum(t.beginn)}, ${formatZeit(t.beginn)}. Ein Eintrag im Kalender bleibt bestehen und muss dort selbst gelöscht werden.`,
+    `${M.vollerName(terminKunde)}, ${formatDatum(t.beginn)}, ${formatZeit(t.beginn)}.`,
     'Löschen',
   );
   if (!ok) return;
@@ -405,31 +417,150 @@ async function loescheTermin() {
   $('#termin-dialog').close();
   renderListe();
   renderDetail();
+  renderKalender();
   meldung('Termin gelöscht.');
+}
+
+// ---------- Bereiche ----------
+
+function zeigeAnsicht(ansicht) {
+  zustand.ansicht = ansicht;
+  const kalender = ansicht === 'kalender';
+  $('.arbeitsflaeche').hidden = kalender;
+  $('#kalender').hidden = !kalender;
+  $('#reiter-kunden').setAttribute('aria-pressed', String(!kalender));
+  $('#reiter-kalender').setAttribute('aria-pressed', String(kalender));
+  if (kalender) renderKalender();
 }
 
 // ---------- Kalender ----------
 
-let kalenderTermin = null;
-let kalenderKunde = null;
-
-function oeffneKalender(termin, kunde, geaendert, titel = 'In den Kalender eintragen') {
-  kalenderTermin = termin;
-  kalenderKunde = kunde;
-  $('#kalender-titel').textContent = titel;
-  $('#kalender-zusammenfassung').textContent =
-    `${M.vollerName(kunde)}: ${formatDatum(termin.beginn)}, ${formatZeit(termin.beginn)}, ` +
-    `${formatDauer(termin.dauerMinuten)}${termin.leistung ? ', ' + termin.leistung : ''}.`;
-  $('#kalender-aenderung').hidden = !geaendert;
-  $('#kalender-google').href = googleLink(termin, kunde);
-  $('#kalender-dialog').showModal();
+function terminKnopf(t, kunde, mitEnde) {
+  const vorbei = M.terminEnde(t) <= new Date();
+  const zeit = mitEnde ? `${formatZeit(t.beginn)} bis ${formatZeit(M.terminEnde(t).toISOString())}` : formatZeit(t.beginn);
+  return h('button', {
+    type: 'button',
+    class: 'kal-termin' + (vorbei ? ' vorbei' : ''),
+    onclick: (e) => {
+      e.stopPropagation();
+      oeffneTerminDialog(kunde, t);
+    },
+  },
+    h('span', { class: 'kal-zeit' }, zeit),
+    h('span', { class: 'kal-name' }, mitEnde ? M.vollerName(kunde) : kunde.nachname || kunde.vorname),
+    mitEnde && t.leistung ? h('span', { class: 'kal-leistung' }, t.leistung) : null,
+  );
 }
 
-function icsHerunterladen() {
-  const datei = new File([ics(kalenderTermin, kalenderKunde)], icsDateiname(kalenderTermin), {
-    type: 'text/calendar',
-  });
-  herunterladen(datei);
+function renderKalender() {
+  if (zustand.ansicht !== 'kalender') return;
+  const woche = zustand.kalenderModus === 'woche';
+  const tag = zustand.kalenderTag;
+  const heuteTag = heute();
+  const kunden = new Map(zustand.kunden.map((k) => [k.id, k]));
+  $('#modus-woche').setAttribute('aria-pressed', String(woche));
+  $('#modus-monat').setAttribute('aria-pressed', String(!woche));
+  $('#kalender-titel').textContent = woche ? K.wochenTitel(tag) : K.monatsTitel(tag);
+  const box = $('#kalender-inhalt');
+
+  if (woche) {
+    const tage = K.tageDerWoche(tag);
+    const jeTag = K.termineJeTag(zustand.termine, tage[0], tage[6]);
+    box.replaceChildren(
+      h('div', { class: 'woche' },
+        tage.map((d) => {
+          const termine = (jeTag.get(d) ?? []).filter((t) => kunden.has(t.kundeId));
+          return h('div', { class: 'woche-tag' + (d === heuteTag ? ' heute' : '') },
+            h('div', { class: 'woche-tag-kopf' },
+              h('span', {}, K.tagKopf(d)),
+              h('button', {
+                type: 'button',
+                class: 'plus',
+                'aria-label': `Neuer Termin am ${K.tagKopf(d)}`,
+                onclick: () => oeffneKundeWaehlen(d),
+              }, '+'),
+            ),
+            termine.length
+              ? termine.map((t) => terminKnopf(t, kunden.get(t.kundeId), true))
+              : h('p', { class: 'frei' }, 'frei'),
+          );
+        }),
+      ),
+    );
+    return;
+  }
+
+  const raster = K.monatsRaster(tag);
+  const jeTag = K.termineJeTag(zustand.termine, raster[0][0], raster.at(-1)[6]);
+  const monat = K.monatVon(tag);
+  const MAX = 3;
+  box.replaceChildren(
+    h('div', { class: 'monat' },
+      K.WOCHENTAGE_KURZ.map((w) => h('div', { class: 'monat-wochentag' }, w)),
+      raster.flat().map((d) => {
+        const termine = (jeTag.get(d) ?? []).filter((t) => kunden.has(t.kundeId));
+        const klassen = ['monat-tag'];
+        if (K.monatVon(d) !== monat) klassen.push('fremd');
+        if (d === heuteTag) klassen.push('heute');
+        return h('div', {
+          class: klassen.join(' '),
+          onclick: () => zeigeWoche(d),
+        },
+          h('button', { type: 'button', class: 'monat-zahl', 'aria-label': `Woche mit ${K.tagKopf(d)} zeigen` }, K.tagesZahl(d)),
+          termine.slice(0, MAX).map((t) => terminKnopf(t, kunden.get(t.kundeId), false)),
+          termine.length > MAX ? h('span', { class: 'mehr' }, `+${termine.length - MAX} weitere`) : null,
+        );
+      }),
+    ),
+  );
+}
+
+function zeigeWoche(tag) {
+  zustand.kalenderModus = 'woche';
+  zustand.kalenderTag = tag;
+  renderKalender();
+}
+
+function blaettern(richtung) {
+  zustand.kalenderTag = zustand.kalenderModus === 'woche'
+    ? K.plusTage(zustand.kalenderTag, 7 * richtung)
+    : K.plusMonate(zustand.kalenderTag, richtung);
+  renderKalender();
+}
+
+// ---------- Kunde für einen Termin wählen ----------
+
+let waehlenTag = null;
+
+function renderWaehlenListe() {
+  const treffer = M.sucheKunden(zustand.kunden, $('#waehlen-suche').value).slice(0, 30);
+  const ul = $('#waehlen-liste');
+  if (treffer.length === 0) {
+    ul.replaceChildren(h('li', { class: 'leer' }, zustand.kunden.length ? 'Keine Treffer.' : 'Noch keine Kunden.'));
+    return;
+  }
+  ul.replaceChildren(
+    ...treffer.map((k) => h('li', {},
+      h('button', {
+        type: 'button',
+        onclick: () => {
+          $('#waehlen-dialog').close();
+          oeffneTerminDialog(k, null, waehlenTag);
+        },
+      },
+        h('span', { class: 'kunde-name' }, k.vorname ? k.vorname + ' ' : '', h('span', { class: 'nach' }, k.nachname)),
+        k.telefon ? h('span', { class: 'kunde-unter' }, k.telefon) : null,
+      ),
+    )),
+  );
+}
+
+function oeffneKundeWaehlen(tag) {
+  waehlenTag = tag;
+  $('#waehlen-tag').textContent = formatDatum(`${tag}T12:00:00Z`);
+  $('#waehlen-suche').value = '';
+  renderWaehlenListe();
+  $('#waehlen-dialog').showModal();
 }
 
 // ---------- Dateien teilen oder herunterladen ----------
@@ -545,8 +676,32 @@ function verdrahte() {
   $('#kunde-loeschen').addEventListener('click', loescheKunde);
   $('#termin-form').addEventListener('submit', speichereTermin);
   $('#termin-loeschen').addEventListener('click', loescheTermin);
-  $('#kalender-ics').addEventListener('click', icsHerunterladen);
-  $('#kalender-google').addEventListener('click', () => setTimeout(() => $('#kalender-dialog').close(), 300));
+  $('#reiter-kunden').addEventListener('click', () => zeigeAnsicht('kunden'));
+  $('#reiter-kalender').addEventListener('click', () => zeigeAnsicht('kalender'));
+  $('#modus-woche').addEventListener('click', () => {
+    zustand.kalenderModus = 'woche';
+    renderKalender();
+  });
+  $('#modus-monat').addEventListener('click', () => {
+    zustand.kalenderModus = 'monat';
+    renderKalender();
+  });
+  $('#kalender-zurueck').addEventListener('click', () => blaettern(-1));
+  $('#kalender-vor').addEventListener('click', () => blaettern(1));
+  $('#kalender-heute').addEventListener('click', () => {
+    zustand.kalenderTag = heute();
+    renderKalender();
+  });
+  $('#waehlen-suche').addEventListener('input', renderWaehlenListe);
+  $('#waehlen-neu').addEventListener('click', () => {
+    $('#waehlen-dialog').close();
+    oeffneKundeDialog(null, waehlenTag);
+  });
+  $('#termin-zur-karte').addEventListener('click', () => {
+    $('#termin-dialog').close();
+    zeigeAnsicht('kunden');
+    waehle(terminKunde.id);
+  });
   $('#export-json').addEventListener('click', exportiereJson);
   $('#export-csv').addEventListener('click', exportiereCsv);
   $('#import-datei').addEventListener('change', importiere);

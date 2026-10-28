@@ -2,7 +2,7 @@
 
 **Was die App ist:** eine Kundenkartei, die nur auf diesem iPad lebt. Es gibt
 keinen Server und kein Konto. Die Daten verlassen das iPad nur, wenn Sie selbst
-eine Sicherung exportieren oder einen Termin an Google übergeben.
+eine Sicherung exportieren.
 
 ## 1. Installation (einmalig)
 
@@ -31,12 +31,13 @@ ID & Code). Die App hat kein eigenes Passwort.
   Dann App neu hinzufügen und unter **Sicherung › Sicherung auswählen** die
   letzte JSON-Datei einlesen.
 
-## 4. Termine in den Kalender
+## 4. Kalender
 
-1. Kunde öffnen, **+ Neuer Termin**, Angaben eintragen, **Speichern**.
-2. **In Google Kalender eintragen** tippen. Google öffnet sich mit dem
-   ausgefüllten Termin: dort **Speichern** tippen.
-3. Wer nicht mit Google arbeitet: **In iPad-Kalender (Datei)** tippen und den
-   Termin hinzufügen.
-4. Wird ein Termin in der App geändert oder gelöscht, den alten Eintrag im
-   Kalender **selbst löschen**. Die App kann Kalendereinträge nicht ändern.
+- Oben auf **Kalender** tippen. **Woche** oder **Monat** wählen, mit **‹ ›**
+  blättern, **Heute** springt zurück.
+- Neuer Termin: in der Woche beim Tag auf **+** tippen, Kunde suchen und
+  antippen (oder **+ Neuer Kunde**), Uhrzeit und Leistung eintragen,
+  **Speichern**. Oder in der Kundenkarte **+ Neuer Termin**.
+- Termin antippen: ändern oder löschen.
+- Die Termine sind nur auf diesem iPad. Die App erinnert nicht von selbst an
+  Termine.

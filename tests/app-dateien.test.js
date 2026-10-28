@@ -27,12 +27,11 @@ test('Service Worker lädt jede Datei aus app/ vor', () => {
   for (const d of liste) assert.ok(d === './' || dateien.includes(d), `fehlt auf Platte: ${d}`);
 });
 
-test('Keine fremden Adressen ausser dem Google-Kalender-Link', () => {
+test('Keine fremden Adressen in der App', () => {
   for (const d of textDateien) {
     for (const [url] of lies(d).matchAll(/https?:\/\/[^\s'"`)<>]+/g)) {
-      // SVG-Namensraum ist eine Kennung, kein Abruf
-      if (url === 'http://www.w3.org/2000/svg') continue;
-      assert.ok(url.startsWith('https://calendar.google.com/calendar/render'), `${d}: ${url}`);
+      // einzige Ausnahme: der SVG-Namensraum ist eine Kennung, kein Abruf
+      assert.equal(url, 'http://www.w3.org/2000/svg', `${d}: ${url}`);
     }
   }
 });

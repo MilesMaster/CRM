@@ -1,120 +1,103 @@
-// Google-Kalender-Link und .ics-Datei für einen Termin. Ohne DOM.
+// Kalender-Logik für Wochen- und Monatsansicht. Ohne DOM.
+// Tage sind Texte 'JJJJ-MM-TT' (Zürcher Kalendertag); gerechnet wird in UTC,
+// damit die Sommerzeit keine Tage verschiebt.
 
-import { ZONE, isoTeile } from './zeit.js';
-import { vollerName, terminEnde } from './modell.js';
+import { isoTeile } from './zeit.js';
 
-export const GOOGLE_BASIS = 'https://calendar.google.com/calendar/render';
+const TAG_MS = 86400000;
 
-export function titel(termin, kunde) {
-  return `${termin.leistung || 'Termin'} · ${vollerName(kunde)}`;
+function zuMs(tag) {
+  const [j, m, t] = tag.split('-').map(Number);
+  return Date.UTC(j, m - 1, t);
 }
 
-export function beschreibung(termin, kunde) {
-  const zeilen = [];
-  if (kunde.telefon) zeilen.push(`Telefon: ${kunde.telefon}`);
-  if (termin.notiz) zeilen.push(`Notiz: ${termin.notiz}`);
-  return zeilen.join('\n');
+function zuTag(ms) {
+  return new Date(ms).toISOString().slice(0, 10);
 }
 
-// 20261103T133000Z
-function utcStempel(date) {
-  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+export function plusTage(tag, n) {
+  return zuTag(zuMs(tag) + n * TAG_MS);
 }
 
-// 20261103T143000 (Wanduhr Zürich)
-function lokalStempel(date) {
-  const { datum, zeit } = isoTeile(date.toISOString());
-  return `${datum.replace(/-/g, '')}T${zeit.replace(':', '')}00`;
+// 0 = Montag … 6 = Sonntag
+export function wochentag(tag) {
+  return (new Date(zuMs(tag)).getUTCDay() + 6) % 7;
 }
 
-export function googleLink(termin, kunde) {
-  const beginn = new Date(termin.beginn);
-  const ende = terminEnde(termin);
-  const teile = [
-    ['action', 'TEMPLATE'],
-    ['text', titel(termin, kunde)],
-    ['dates', `${utcStempel(beginn)}/${utcStempel(ende)}`],
-    ['ctz', ZONE],
-  ];
-  const details = beschreibung(termin, kunde);
-  if (details) teile.push(['details', details]);
-  const query = teile.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
-  return `${GOOGLE_BASIS}?${query}`;
+export function wochenStart(tag) {
+  return plusTage(tag, -wochentag(tag));
 }
 
-// ---------- ICS (RFC 5545) ----------
-
-export function icsText(s) {
-  return s
-    .replace(/\\/g, '\\\\')
-    .replace(/;/g, '\\;')
-    .replace(/,/g, '\\,')
-    .replace(/\r\n|\r|\n/g, '\\n');
+export function tageDerWoche(tag) {
+  const start = wochenStart(tag);
+  return Array.from({ length: 7 }, (_, i) => plusTage(start, i));
 }
 
-const kodierer = new TextEncoder();
+// Gleicher Tag im Nachbarmonat, am Monatsende gekürzt (31.01. plus 1 Monat = 28.02.)
+export function plusMonate(tag, n) {
+  const [j, m, t] = tag.split('-').map(Number);
+  const ziel = new Date(Date.UTC(j, m - 1 + n, 1));
+  const letzter = new Date(Date.UTC(ziel.getUTCFullYear(), ziel.getUTCMonth() + 1, 0)).getUTCDate();
+  ziel.setUTCDate(Math.min(t, letzter));
+  return zuTag(ziel.getTime());
+}
 
-// Zeilen über 75 Byte falten, ohne ein Zeichen zu zerschneiden.
-export function falten(zeile) {
-  const teile = [];
-  let aktuell = '';
-  let bytes = 0;
-  for (const zeichen of zeile) {
-    const n = kodierer.encode(zeichen).length;
-    const grenze = teile.length === 0 ? 75 : 74; // Folgezeilen beginnen mit Leerzeichen
-    if (bytes + n > grenze) {
-      teile.push(aktuell);
-      aktuell = '';
-      bytes = 0;
-    }
-    aktuell += zeichen;
-    bytes += n;
+export function monatVon(tag) {
+  return tag.slice(0, 7);
+}
+
+// Wochen (Montag bis Sonntag), die den Monat abdecken: 4 bis 6 Zeilen zu 7 Tagen.
+export function monatsRaster(tag) {
+  const erster = `${monatVon(tag)}-01`;
+  const letzter = plusTage(plusMonate(erster, 1), -1);
+  const wochen = [];
+  for (let start = wochenStart(erster); start <= letzter; start = plusTage(start, 7)) {
+    wochen.push(Array.from({ length: 7 }, (_, i) => plusTage(start, i)));
   }
-  teile.push(aktuell);
-  return teile.join('\r\n ');
+  return wochen;
 }
 
-const VTIMEZONE = [
-  'BEGIN:VTIMEZONE',
-  `TZID:${ZONE}`,
-  'BEGIN:DAYLIGHT',
-  'TZOFFSETFROM:+0100',
-  'TZOFFSETTO:+0200',
-  'TZNAME:CEST',
-  'DTSTART:19810329T020000',
-  'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU',
-  'END:DAYLIGHT',
-  'BEGIN:STANDARD',
-  'TZOFFSETFROM:+0200',
-  'TZOFFSETTO:+0100',
-  'TZNAME:CET',
-  'DTSTART:19961027T030000',
-  'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU',
-  'END:STANDARD',
-  'END:VTIMEZONE',
-];
-
-export function ics(termin, kunde, jetzt = new Date()) {
-  const zeilen = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Lumiere Kunden//DE',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    ...VTIMEZONE,
-    'BEGIN:VEVENT',
-    `UID:${termin.id}@lumiere-kunden`,
-    `DTSTAMP:${utcStempel(jetzt)}`,
-    `DTSTART;TZID=${ZONE}:${lokalStempel(new Date(termin.beginn))}`,
-    `DTEND;TZID=${ZONE}:${lokalStempel(terminEnde(termin))}`,
-    `SUMMARY:${icsText(titel(termin, kunde))}`,
-  ];
-  const details = beschreibung(termin, kunde);
-  if (details) zeilen.push(`DESCRIPTION:${icsText(details)}`);
-  zeilen.push('END:VEVENT', 'END:VCALENDAR');
-  return zeilen.map(falten).join('\r\n') + '\r\n';
+// ISO-Kalenderwoche
+export function kalenderwoche(tag) {
+  const donnerstag = plusTage(tag, 3 - wochentag(tag));
+  const jahresAnfang = Date.UTC(Number(donnerstag.slice(0, 4)), 0, 1);
+  return Math.floor((zuMs(donnerstag) - jahresAnfang) / TAG_MS / 7) + 1;
 }
 
-export function icsDateiname(termin) {
-  return `termin-${isoTeile(termin.beginn).datum}.ics`;
+// Termine je Zürcher Kalendertag, im Tag nach Uhrzeit sortiert.
+export function termineJeTag(termine, vonTag, bisTag) {
+  const karte = new Map();
+  for (const t of termine) {
+    const tag = isoTeile(t.beginn).datum;
+    if (tag < vonTag || tag > bisTag) continue;
+    if (!karte.has(tag)) karte.set(tag, []);
+    karte.get(tag).push(t);
+  }
+  for (const liste of karte.values()) liste.sort((a, b) => new Date(a.beginn) - new Date(b.beginn));
+  return karte;
+}
+
+const monatsFormat = new Intl.DateTimeFormat('de-CH', { timeZone: 'UTC', month: 'long', year: 'numeric' });
+const tagMonatFormat = new Intl.DateTimeFormat('de-CH', { timeZone: 'UTC', day: 'numeric', month: 'short' });
+const tagKopfFormat = new Intl.DateTimeFormat('de-CH', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'numeric' });
+
+export const WOCHENTAGE_KURZ = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+export function monatsTitel(tag) {
+  return monatsFormat.format(new Date(zuMs(tag)));
+}
+
+export function wochenTitel(tag) {
+  const tage = tageDerWoche(tag);
+  const von = new Date(zuMs(tage[0]));
+  const bis = new Date(zuMs(tage[6]));
+  return `KW ${kalenderwoche(tag)} · ${tagMonatFormat.format(von)} bis ${tagMonatFormat.format(bis)} ${bis.getUTCFullYear()}`;
+}
+
+export function tagKopf(tag) {
+  return tagKopfFormat.format(new Date(zuMs(tag)));
+}
+
+export function tagesZahl(tag) {
+  return Number(tag.slice(8, 10));
 }

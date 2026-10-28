@@ -21,6 +21,10 @@
 <body>
   <header class="kopf">
     <h1 class="marke">Lumière <span>Kunden</span></h1>
+    <nav class="reiter" aria-label="Bereich">
+      <button type="button" class="reiter-knopf" id="reiter-kunden" aria-pressed="true">Kunden</button>
+      <button type="button" class="reiter-knopf" id="reiter-kalender" aria-pressed="false">Kalender</button>
+    </nav>
     <div class="kopf-knoepfe">
       <button type="button" class="knopf leise" id="knopf-sicherung">Sicherung</button>
       <button type="button" class="knopf haupt" id="knopf-neuer-kunde">+ Neuer Kunde</button>
@@ -39,6 +43,22 @@
     </section>
     <section class="detail" id="detail" aria-live="polite"></section>
   </main>
+
+  <section class="kalender" id="kalender" aria-label="Kalender" hidden>
+    <div class="kalender-kopf">
+      <div class="umschalter" role="group" aria-label="Ansicht">
+        <button type="button" id="modus-woche" aria-pressed="true">Woche</button>
+        <button type="button" id="modus-monat" aria-pressed="false">Monat</button>
+      </div>
+      <h2 id="kalender-titel"></h2>
+      <div class="reihe">
+        <button type="button" class="knopf leise rund" id="kalender-zurueck" aria-label="Zurück">‹</button>
+        <button type="button" class="knopf leise" id="kalender-heute">Heute</button>
+        <button type="button" class="knopf leise rund" id="kalender-vor" aria-label="Weiter">›</button>
+      </div>
+    </div>
+    <div id="kalender-inhalt" class="kalender-inhalt"></div>
+  </section>
 
   <!-- Kunde erfassen oder bearbeiten -->
   <dialog id="kunde-dialog" class="dialog">
@@ -90,6 +110,7 @@
       <p class="fehler" role="alert"></p>
       <div class="dialog-knoepfe">
         <button type="button" class="knopf gefahr" id="termin-loeschen" hidden>Termin löschen</button>
+        <button type="button" class="knopf leise" id="termin-zur-karte" hidden>Kundenkarte</button>
         <span class="abstand"></span>
         <button type="button" class="knopf leise" data-schliessen>Abbrechen</button>
         <button type="submit" class="knopf haupt">Speichern</button>
@@ -97,22 +118,16 @@
     </form>
   </dialog>
 
-  <!-- Termin in den Kalender übernehmen -->
-  <dialog id="kalender-dialog" class="dialog schmal">
-    <h2 id="kalender-titel">Termin gespeichert</h2>
-    <p id="kalender-zusammenfassung" class="zusammenfassung"></p>
-    <p id="kalender-aenderung" class="warnung" hidden>
-      Der Termin wurde geändert. Bitte den alten Eintrag im Kalender selbst löschen:
-      ein Link kann bestehende Einträge nicht ändern.
-    </p>
-    <div class="kalender-knoepfe">
-      <a class="knopf haupt gross" id="kalender-google" target="_blank" rel="noopener noreferrer">In Google Kalender eintragen</a>
-      <button type="button" class="knopf leise gross" id="kalender-ics">In iPad-Kalender (Datei)</button>
-    </div>
-    <p class="klein">Im Google Kalender anschliessend «Speichern» tippen.</p>
+  <!-- Kunde für einen neuen Termin aus dem Kalender wählen -->
+  <dialog id="waehlen-dialog" class="dialog schmal">
+    <h2>Neuer Termin</h2>
+    <p class="untertitel" id="waehlen-tag"></p>
+    <input type="search" id="waehlen-suche" placeholder="Kunde suchen: Name, Telefon" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Kunde suchen">
+    <ul id="waehlen-liste" class="kundenliste waehlen-liste"></ul>
     <div class="dialog-knoepfe">
+      <button type="button" class="knopf leise" id="waehlen-neu">+ Neuer Kunde</button>
       <span class="abstand"></span>
-      <button type="button" class="knopf leise" data-schliessen>Fertig</button>
+      <button type="button" class="knopf leise" data-schliessen>Abbrechen</button>
     </div>
   </dialog>
 

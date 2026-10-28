@@ -15,17 +15,18 @@ Nur erfundene Daten verwenden.
 3. Drei weitere Kunden, einer mit Umlaut im Nachnamen (z. B. «Ägerter»).
    Liste nach Nachname sortiert. Suche: «ager», «079 123», «+4179», Teil der
    Mail. Jeweils richtige Treffer.
-4. Termin anlegen (morgen 14:30, 1 Std. 30 Min., «Farbe», Notiz mit Semikolon).
-   Dialog «Termin gespeichert» erscheint.
-   - **In Google Kalender eintragen**: Google zeigt Titel «Farbe · Anna Muster»,
-     richtige Zeit (14:30 bis 16:00), Beschreibung mit Telefon und Notiz.
-     NICHT speichern, oder danach wieder löschen.
-   - **In iPad-Kalender (Datei)**: `.ics`-Datei wird geladen; in Kalender
-     (Mac) öffnen zeigt dieselben Angaben und Zeit.
+4. Termin anlegen (morgen 14:30, 1 Std. 30 Min., «Farbe»). Kein
+   Kalender-Dialog mehr, nur die Meldung «Termin gespeichert».
 5. Einen vergangenen Termin anlegen (letzten Monat). Karte: «Kommende» und
    «Vergangene» getrennt; Liste zeigt «Zuletzt …».
-6. Termin bearbeiten: Dialog zeigt den gelben Hinweis, alten Eintrag selbst zu
-   löschen.
+6. **Kalender › Woche:** heute ist umrandet, Termine mit Zeit von bis, Name,
+   Leistung. ‹ › blättert wochenweise, «Heute» springt zurück. Beim Tag auf
+   «+»: Kunde suchen, antippen, Datum ist vorausgefüllt. «+ Neuer Kunde» im
+   Auswahlfenster: nach dem Speichern des Kunden geht es direkt zum Termin.
+   Termin antippen: Bearbeiten-Dialog mit «Kundenkarte».
+6a. **Kalender › Monat:** Raster Mo bis So, Tage anderer Monate blass,
+   vier Termine an einem Tag: drei sichtbar, «+1 weitere». Tag antippen:
+   springt in seine Woche.
 7. Termin löschen, Kunde löschen: Rückfrage nennt die Anzahl Termine.
 8. **Sicherung › JSON** und **CSV**: Dateien laden; CSV in Excel öffnen
    (Umlaute, Spalten, Notiz mit Zeilenumbruch in einer Zelle).
@@ -42,12 +43,10 @@ Nur erfundene Daten verwenden.
     bedienbar, Tastatur verdeckt keine Knöpfe.
 13. Flugmodus an, App starten: läuft.
 14. Telefon- und Mail-Kachel antippen: öffnet Anruf bzw. Mail.
-15. Google-Kalender-Link: öffnet Google (App oder Safari), Termin mit
-    «Speichern» sichern, erscheint im iPad-Kalender (wenn das Google-Konto dort
-    eingerichtet ist).
-16. **iPad-Kalender (Datei)**: wichtigster Prüfpunkt für den Rückfall. Prüfen,
-    ob iPadOS «Zum Kalender hinzufügen» anbietet. Falls nicht: melden, dann
-    stelle ich auf das Teilen-Menü um.
+15. Kalender quer und hochkant: quer sieben Spalten, hochkant sieben Zeilen;
+    Monat passt ohne seitliches Scrollen.
+16. Neuer Termin: Datum, Uhrzeit, Dauer stehen sauber nebeneinander, kein
+    roter Löschknopf. Beim Bearbeiten ist «Termin löschen» da.
 17. Sicherung exportieren: Teilen-Menü erscheint, «In Dateien sichern» geht.
     Einlesen aus «Dateien» geht.
 18. Sicherung › Hinweis zum dauerhaften Speicher lesen und melden, was dort steht.

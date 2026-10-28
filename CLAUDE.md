@@ -19,11 +19,10 @@ Gastro-Plattform**. Konzept: `docs/KONZEPT.md`.
 2. **Kein Server, alles lokal.** Die Daten liegen nur im Browser-Speicher des
    iPads (IndexedDB). Die Dateien der App liegen einmal statisch im Netz
    (GitHub Pages o. ä.), danach läuft die App offline über einen Service Worker.
-   Keine Analyse, kein Tracking, keine Aufrufe an fremde Dienste ausser dem
-   Öffnen eines Google-Kalender-Links durch den Nutzer.
-3. **Termine über einen vorausgefüllten Google-Kalender-Link** (der Coiffeur
-   tippt dort «Speichern»), dazu als Rückfall eine `.ics`-Datei für den
-   iPad-Kalender. Kein Google-API, kein OAuth.
+   Keine Analyse, kein Tracking, keine Aufrufe an fremde Dienste.
+3. **Eigener Kalender in der App** (geändert 28.10.2026): Wochen- und
+   Monatsansicht, einfach bedienbar. Kein Google-Kalender, keine `.ics`-Datei,
+   kein Google-API, kein OAuth.
 
 ## Technik
 
@@ -31,7 +30,7 @@ Gastro-Plattform**. Konzept: `docs/KONZEPT.md`.
   Fremdbibliotheken, kein CDN**: die App muss in Jahren noch ohne Pflege laufen.
 - `manifest.webmanifest`, App-Symbole, Service Worker (alle Dateien
   vorgeladen, offline-fähig), `navigator.storage.persist()` anfragen.
-- Logik (Datenmodell, Suche, Export/Import, Kalender-Link, ICS) in eigenen
+- Logik (Datenmodell, Suche, Export/Import, Kalender) in eigenen
   Modulen ohne DOM, getestet mit `node --test`.
 - Lokal starten: `python3 -m http.server 4710` im Ordner `app/`.
 

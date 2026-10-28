@@ -1,7 +1,7 @@
 // Service Worker: lädt alle Dateien vor, danach startet die App ohne Internet.
 // Bei jeder Änderung an einer Datei VERSION erhöhen, sonst bleibt die alte Fassung.
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `kundenkartei-${VERSION}`;
 
 const DATEIEN = [

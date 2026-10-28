@@ -5,8 +5,8 @@ Stand 28.10.2026. Auftraggeber: Coiffeur Lumière. Gerät: ein iPad im Salon.
 ## Ziel
 
 Kundenpflege ohne Server: Kunden finden, Kontaktdaten und Notizen sehen, sehen,
-wann sie zuletzt da waren und was gemacht wurde, und neue Termine im
-Google-Kalender eintragen.
+wann sie zuletzt da waren und was gemacht wurde, und Termine im eigenen
+Kalender der App planen.
 
 ## Umfang v1
 
@@ -18,15 +18,16 @@ Google-Kalender eintragen.
 3. **Terminhistorie je Kunde:** alle Termine, getrennt in «Kommende» und
    «Vergangene», neueste zuerst. Je Termin: Datum, Uhrzeit, Dauer, Leistung,
    Notiz.
-4. **Neuer Termin:** aus der Kundenkarte; Datum, Uhrzeit, Dauer, Leistung, Notiz.
-   Speichert lokal und bietet zwei Knöpfe:
-   - «In Google Kalender eintragen»: öffnet
-     `https://calendar.google.com/calendar/render?action=TEMPLATE` mit `text`
-     («Leistung · Vorname Nachname»), `dates` (Beginn/Ende), `ctz=Europe/Zurich`
-     und `details` (Telefon, Notiz).
-   - «In iPad-Kalender» (Rückfall): `.ics`-Datei mit Zeitzone Europe/Zurich.
-   Ein geänderter Termin bietet die Links neu an, mit Hinweis, den alten
-   Eintrag im Kalender selbst zu löschen (ein Link kann nichts ändern).
+4. **Neuer Termin:** aus der Kundenkarte oder im Kalender über «+» an einem Tag
+   (Kunde suchen oder neu erfassen); Datum, Uhrzeit, Dauer, Leistung, Notiz.
+   Speichert nur lokal.
+4a. **Kalender** (Entscheid des Gründers 28.10.2026, ersetzt Google-Link und
+   `.ics`): Reiter «Kalender» mit Wochen- und Monatsansicht, Blättern und
+   «Heute». Woche: sieben Tage mit allen Terminen (Zeit, Kunde, Leistung), im
+   Querformat als Spalten, hochkant als Zeilen. Monat: Raster Montag bis
+   Sonntag, je Tag bis drei Termine. Termin antippen öffnet ihn zum Bearbeiten,
+   Tag im Monat antippen öffnet seine Woche. Keine Erinnerungen (eine Web-App
+   ohne Server kann keine senden), Termine nur auf diesem iPad.
 5. **Sicherung:** Export aller Daten als JSON (wieder einlesbar) und CSV (für
    Excel), über das Teilen-Menü (`navigator.share` mit Datei) oder als
    Download. Import nur aus dem eigenen JSON, mit Bestätigung, ersetzt alles.
@@ -34,7 +35,7 @@ Google-Kalender eintragen.
 6. **Installationshinweis:** Läuft die Seite nicht als Home-Bildschirm-App,
    zeigt sie kurz, wie man sie hinzufügt.
 
-Nicht in v1: Online-Buchung, Erinnerungs-SMS, Kasse, mehrere Geräte, Fotos,
+Nicht in v1: Google-Kalender, Erinnerungen, Online-Buchung, Erinnerungs-SMS, Kasse, mehrere Geräte, Fotos,
 Passwort in der App (Schutz über den Gerätecode).
 
 ## Datenmodell (IndexedDB)
@@ -56,8 +57,7 @@ Passwort in der App (Schutz über den Gerätecode).
 
 ## Datenschutz
 
-- Daten verlassen das iPad nur beim Export durch den Nutzer und mit den
-  Kalenderangaben, die er an Google übergibt.
+- Daten verlassen das iPad nur beim Export durch den Nutzer.
 - Gerätecode am iPad ist Pflicht (Hinweis im Übergabeblatt).
 - Öffentlich sind nur die Programmdateien (leere App). Kundendaten liegen nie im
   Repo, nie auf GitHub Pages, nie auf einem Server. Vor jeder Veröffentlichung
@@ -70,7 +70,7 @@ Passwort in der App (Schutz über den Gerätecode).
    Repo nur mit `app/`, ohne Kundendaten). Nur mit Freigabe des Gründers.
 2. Auf dem iPad in Safari öffnen, «Teilen › Zum Home-Bildschirm».
 3. Übergabeblatt (1 Seite): Installation, Gerätecode, iCloud-Backup, monatlicher
-   Export, Kalender-Ablauf.
+   Export, Kalender.
 
 ## Offene Punkte (mit Empfehlung)
 
