@@ -1,7 +1,7 @@
 // Service Worker: lädt alle Dateien vor, danach startet die App ohne Internet.
 // Bei jeder Änderung an einer Datei VERSION erhöhen, sonst bleibt die alte Fassung.
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = `kundenkartei-${VERSION}`;
 
 const DATEIEN = [
@@ -19,6 +19,7 @@ const DATEIEN = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
+  'icons/logo.png',
 ];
 
 self.addEventListener('install', (ereignis) => {

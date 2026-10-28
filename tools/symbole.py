@@ -1,31 +1,30 @@
-"""Erzeugt die App-Symbole in app/icons/. Nur zum Entwickeln (braucht Pillow),
-die fertigen PNG-Dateien liegen im Repo. Aufruf: python3 tools/symbole.py"""
+"""Erzeugt die App-Symbole in app/icons/ aus dem Logo app/icons/logo.png
+(Lumière Hair Studio, transparent, dunkelbraun). Nur zum Entwickeln (braucht
+Pillow), die fertigen PNG-Dateien liegen im Repo. Aufruf: python3 tools/symbole.py"""
 
 from pathlib import Path
-from PIL import Image, ImageDraw
+from PIL import Image
 
 ZIEL = Path(__file__).resolve().parent.parent / "app" / "icons"
-GRUND = (122, 75, 52)      # Akzent der App
-HELL = (250, 248, 245)     # Grundfarbe der App
-FAKTOR = 4                 # Überabtastung für glatte Kanten
+GRUND = (207, 196, 185)    # Taupe aus der Website des Salons
+LOGO_FARBE = (255, 255, 255)
 
 
-def symbol(groesse, innen=1.0):
-    g = groesse * FAKTOR
-    bild = Image.new("RGB", (g, g), GRUND)
-    zeichnung = ImageDraw.Draw(bild)
-    mitte = g / 2
-    r = g * 0.26 * innen        # Ring
-    staerke = g * 0.045 * innen
-    zeichnung.ellipse([mitte - r, mitte - r, mitte + r, mitte + r], outline=HELL, width=round(staerke))
-    p = g * 0.075 * innen       # Lichtpunkt in der Mitte
-    zeichnung.ellipse([mitte - p, mitte - p, mitte + p, mitte + p], fill=HELL)
-    return bild.resize((groesse, groesse), Image.LANCZOS)
+def symbol(logo, groesse, breite):
+    """Logo in Weiss, zentriert auf Taupe; breite = Anteil der Symbolbreite."""
+    bild = Image.new("RGB", (groesse, groesse), GRUND)
+    w = round(groesse * breite)
+    h = round(logo.height * w / logo.width)
+    maske = logo.split()[3].resize((w, h), Image.LANCZOS)
+    farbe = Image.new("RGB", (w, h), LOGO_FARBE)
+    bild.paste(farbe, ((groesse - w) // 2, (groesse - h) // 2), maske)
+    return bild
 
 
-ZIEL.mkdir(parents=True, exist_ok=True)
-symbol(180).save(ZIEL / "apple-touch-icon.png", optimize=True)
-symbol(192).save(ZIEL / "icon-192.png", optimize=True)
-symbol(512).save(ZIEL / "icon-512.png", optimize=True)
-symbol(512, innen=0.8).save(ZIEL / "icon-maskable-512.png", optimize=True)
+logo = Image.open(ZIEL / "logo.png").convert("RGBA")
+symbol(logo, 180, 0.78).save(ZIEL / "apple-touch-icon.png", optimize=True)
+symbol(logo, 192, 0.78).save(ZIEL / "icon-192.png", optimize=True)
+symbol(logo, 512, 0.78).save(ZIEL / "icon-512.png", optimize=True)
+# maskable: Android schneidet bis zu 20 % am Rand weg
+symbol(logo, 512, 0.6).save(ZIEL / "icon-maskable-512.png", optimize=True)
 print("Symbole geschrieben:", ", ".join(sorted(p.name for p in ZIEL.glob("*.png"))))

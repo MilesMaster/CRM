@@ -82,4 +82,5 @@ Passwort in der App (Schutz über den Gerätecode).
 3. **Gestaltung:** entschieden 28.10.2026 nach Empfehlung: hell, warmes Weiss
    mit Akzent in Kupferbraun, Systemschrift, Fingerziele mindestens 52 px.
    Name «Lumière Kunden», Beschriftung auf dem Home-Bildschirm «Kunden».
-   Symbol: heller Ring mit Lichtpunkt auf Kupferbraun (`tools/symbole.py`).
+   Logo «Lumière Hair Studio» des Salons in der Kopfzeile; App-Symbol: Logo
+   in Weiss auf Taupe wie auf seiner Website (`tools/symbole.py`).
