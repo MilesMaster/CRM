@@ -309,6 +309,7 @@ async function speichereKunde(ereignis) {
 
 async function loescheKunde() {
   const k = kundeInArbeit;
+  if (!k) return;
   const n = M.termineVon(zustand.termine, k.id).length;
   const text = (n
     ? `Damit ${n === 1 ? 'wird auch 1 Termin' : `werden auch ${n} Termine`} gelöscht. `
@@ -392,6 +393,7 @@ async function speichereTermin(ereignis) {
 
 async function loescheTermin() {
   const t = terminInArbeit;
+  if (!t) return;
   const ok = await frage(
     'Termin löschen?',
     `${formatDatum(t.beginn)}, ${formatZeit(t.beginn)}. Ein Eintrag im Kalender bleibt bestehen und muss dort selbst gelöscht werden.`,

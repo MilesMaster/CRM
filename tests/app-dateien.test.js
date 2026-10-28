@@ -30,6 +30,8 @@ test('Service Worker lädt jede Datei aus app/ vor', () => {
 test('Keine fremden Adressen ausser dem Google-Kalender-Link', () => {
   for (const d of textDateien) {
     for (const [url] of lies(d).matchAll(/https?:\/\/[^\s'"`)<>]+/g)) {
+      // SVG-Namensraum ist eine Kennung, kein Abruf
+      if (url === 'http://www.w3.org/2000/svg') continue;
       assert.ok(url.startsWith('https://calendar.google.com/calendar/render'), `${d}: ${url}`);
     }
   }
@@ -64,4 +66,12 @@ test('Keine Exporte oder Datendateien in app/', () => {
   for (const d of dateien) {
     assert.ok(!/\.(json|csv|ics)$/.test(d), `Datendatei in app/: ${d}`);
   }
+});
+
+test('hidden versteckt immer, auch Knöpfe mit eigener display-Regel', () => {
+  assert.match(lies('styles.css'), /\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/);
+});
+
+test('Rasterfelder dürfen schrumpfen (Datum/Uhrzeit auf dem iPad)', () => {
+  assert.match(lies('styles.css'), /\.felder > label \{ min-width: 0; \}/);
 });
